@@ -1,0 +1,9 @@
+pipeline:
+  name: 'ga_bq_pipeline'
+  env: 'ENV CONF NAME'
+dag_args:
+  start_date: '20200101'
+  retries: 3
+  delay: 2
+  schedule_interval: '0 1 * * *'
+  catchup: False

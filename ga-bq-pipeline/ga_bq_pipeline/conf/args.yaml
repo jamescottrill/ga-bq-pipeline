@@ -1,0 +1,15 @@
+description: google analytics pipeline
+args:
+  environment:
+    short: e
+    required: true
+    help: pipeline environment profile
+    choices:
+      - prod
+      - dev
+      - local
+      - local-dev
+  date:
+    short: d
+    required: true
+    help: pipeline execution date - format YYYYMMDD
