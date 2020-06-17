@@ -1,6 +1,7 @@
 pipeline:
   name: 'ga_bq_pipeline'
   env: 'ENV CONF NAME'
+  date: '{{ yesterday_ds_nodash }}'
 dag_args:
   start_date: '20200101'
   retries: 3

@@ -37,7 +37,7 @@ start = DummyOperator(task_id='start', dag=dag)
 
 run_pipeline = BashOperator(
     task_id='run_pipeline',
-    bash_command='bash CURRENT_DIR/execute.sh {{ ds_nodash }} ' + pipeline_conf['env'],
+    bash_command='bash '+CURRENT_DIR+'/execute.sh ' + pipeline_conf['date'] + ' ' + pipeline_conf['env'],
     dag=dag
 )
 start >> run_pipeline
