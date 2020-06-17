@@ -24,7 +24,28 @@ The way that I've implemented this is to send an additional custom dimension, wh
 
 The scope is encoded as 'H', 'S', 'P' or 'U'. There are other ways that this could be done, including creating a dictionary in the pipeline, but by sending the scope with the hit it ensures that it's always accurate (asusming you remember to change it if you change the custom dimension.)
 
-The other modification required is the device information. The device User Agent (`window.navigator.userAgent`) is required to produce the device columns. This configuration relies on it being passed as a Custom Dimension.
+The other modifications required are: 
+1. The device information - The device User Agent (`window.navigator.userAgent`) is required to produce the device columns. This configuration relies on it being passed as a Custom Dimension.
+1. A Session Id - As I said above, this pipeline doesn't do everything, and one thing it doesn't do is define your sessions. In GA, you can create a custom dimension, scope it as session and it works, that gives you a session Id. That doesn't work here, as I've not written the logic to define sessions prior to grouping the hits. Instead you need to send the same session Id with every hit in a session so they can be grouped. You can configure this however you like, I used a Custom Javascript function to implement this.  
+
+```js
+function() {
+  'use strict';
+  var sid = {{Cookie - _sid}} ? {{Cookie - _sid}} : {{CJS - SessionID}}; 
+  if({{URL - utm_source}} && {{URL - utm_source}}+'/'+{{URL - utm_medium}} != {{Cookie - _utm_source_medium}}){
+    var sid = {{CJS - SessionID}}; //Reset the Session Id if there is a new Source/Medium
+    {{CJS - Set Cookie}}('_utm_source_medium', {{URL - utm_source}}+'/'+{{URL - utm_medium}}, 30*60*1000, '/', 'YOUR_DOMAIN');  //Set the UTM Source/Medium in a cookie. 
+  } 
+  {{CJS - Set Cookie}}('_sid', sid, 30*60*1000, '/', 'YOUR_DOMAIN'); //Save the Session Id in a cookie
+  return sid;
+}
+```
+
+The `CJS - Set Cookie` variable is [this one](https://www.simoahava.com/analytics/create-utility-variables-returning-functions/) and the `CJS - SessionID` variable is any function that generates a random string, such as [this one](https://www.simoahava.com/analytics/improve-data-collection-with-four-custom-dimensions/#3-session-id), again, both by Simo.
+
+The Cookie and URL variables are GTM built in variables with the utm_source or utm_medium for the URL and the cookie names for the cookies. You can use Local Storage rather than Cookies if you prefer, just remember to comply with relevant data privacy legislation
+
+The eagle-eyed amongst you will notice that this doesn't expire the cookie at midnight, however as the data is loaded into either date-partitioned or date sharded tables, and the queries are made on a daily basis, as long as your partitions align to your local timezone the midnight cutoff will happen anyway. 
 
 ## Pipeline configuration
 The majority of the pipeline will work without any modification, however user settings do need to be set up. 
@@ -51,25 +72,41 @@ The majority of the pipeline will work without any modification, however user se
 Other values can be left 'as is'.
 
 ## Local Setup
-If you already have Airflow set up on your device, or you're implementing this on a production airflow server, you can skip this bit.
+NOTE: There are lots of ways to run pipelines on airflow. I chose this one because it separates the virtual environments for airflow and the pipelin and was easy to write. You can use PythonOperators, you can use Kubernetes Operators and run everything on a cluster (I'll publish a DAG for that when I've finished it), but that's all specific on your use case, this is a general one for anyone to use. 
 
-The first step is to create a new environment 
-```python
+The first step is to create new virtual environments, one for the pipeline and one for airflow. You don't have to use a virtual environment for airflow, but it's a good idea to.
+
+#### Pipeline Virtual Env
+```bash
+cd YOUR_PIPELINE_ROOT #Change this to wherever you cloned the repo to.
+export PIPELINE_ROOT=$(pwd) 
 python -m virtualenv env
-source env bin activate
-pip -r ga-bq-pipeline/requirements.txt
+source env/bin/activate
+pip install -r ga-bq-pipeline/requirements.txt
+deactivate
 ```
-Then launch airflow
+#### Airflow Virtual Env
+If you already have Airflow set up on your device, or you're implementing this on a production airflow server, you can skip most of this, just symlink your pipeline folder into your dags folder and you're good to go.
 ```bash
-export AIRFLOW_HOME=~/airflow
-airflow variables -s airflow_env dev #or prod, if you're running in production
-ln -s $(pwd) $AIRFLOW_HOME/dags/demo
-airflow initdb
-airflow webserver
-```
-You can also launch another terminal window and run 
-```bash
-airflow scheduler
+mkdir -p ~/airflow && cd ~/airflow
+export AIRFLOW_HOME=~/airflow #You can also add this to your ~/.bashrc file.
+python -m virtualenv env
+source env/bin/activate
+pip install -r $PIPELINE_ROOT/airflow/requirements.txt
+deactivate
 ```
 
-That should be it. You can turn your dag on and either wait for it to run on schedule or trigger it manually.
+Then launch airflow:
+```bash
+source $AIRFLOW_HOME/env/bin/activate
+airflow variables -s airflow_env dev #or prod, if you're running in production
+mkdir -p $AIRFLOW_HOME/dags/ga-pipeline/
+ln -s $PIPELINE_ROOT $AIRFLOW_HOME/dags/ga-pipeline/
+airflow upgradedb
+airflow webserver -D
+airflow scheduler -D
+```
+
+That should be it. You can access your Airflow implementation at http://localhost:8080. You can turn your dag on and either wait for it to run on schedule or trigger it manually. 
+
+If you're running this on a remote machine, you'll want to add some security, such as user login and also use a sql database rather than the file db, but this will work for demonstration purposes.
