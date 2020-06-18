@@ -3,8 +3,10 @@ from urllib3.util import parse_url as parse
 from datetime import timedelta, date
 import re
 from google.api_core.exceptions import NotFound
+from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 import jsonlines
+import json
 from user_agents import parse as ua_parse
 from google.oauth2 import service_account
 from ga_bq_pipeline.schema.tables import export_schema
@@ -101,11 +103,6 @@ class PIPELINE(ETL):
         except NotFound:
             gs.create_bucket(bucket)
         return
-
-    @staticmethod
-    def build_api(api, version, credentials):
-        api = build(api, version, credentials=credentials)
-        return api
 
     def query_data(self):
         """
@@ -577,10 +574,15 @@ class PIPELINE(ETL):
                                                                                 'https://www.googleapis.com/auth/analytics.edit'
                                                                             ]
                                                                             )
-        api = self.build_api('analytics', 'v3', credentials)
-        request = api.management().clientId().hashClientId(body=body)
-        response = request.execute()
-        return response
+        api = build('analytics', 'v3', credentials=credentials)
+        try:
+            request = api.management().clientId().hashClientId(body=body)
+            response = request.execute()
+            return response
+        except HttpError as ex:
+            self.logger.error('{} Error: {}'.format(ex.resp.status,
+                                                    json.loads(ex.content)['error']['errors'][0]['message']))
+            return {"hashedClientId": ""}
 
     def session_func(self, obj):
         """
