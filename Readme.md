@@ -9,7 +9,9 @@ This has been a longstanding project of mine to replicate, as closely as possibl
 4. Unlimited Custom Dimensions/Metrics - Free GA has a limit of 20 Custom Dimensions and 20 Custom Metrics, GA360 has a limit of 200, with this you can collect an unlimited number. That doesn't mean you have to, no-one likes confetti, but with large eCommerce it's very easy to hit 200.
 
 ## Before you start
-This isn't a perfect replica of GA Data. It doesn't include any filters, it doesn't include Google Ads details beyond the gclid, it only includes basic filters, it doesn't do content grouping if it's not sent in the hit, it doesn't do page timing, it doesn't do geolocation, it doesn't have channel grouping, it doesn't show the visit count… There's lots that this doesn't do. However, for slightly more advanced analytics, where hit level data is required, it's a pretty good approximation.  
+This isn't a perfect replica of GA Data. It doesn't include any filters, it doesn't include Google Ads details beyond the gclid, it only includes basic filters, it doesn't do content grouping if it's not sent in the hit, it doesn't do page timing, it doesn't do geolocation, it doesn't have channel grouping, it doesn't show the visit count… There's lots that this doesn't do. However, for slightly more advanced analytics, where hit level data is required, it's a pretty good approximation.
+
+This pipeline uses the Google Analytics Management API to get the fullVisitorId (hashed client Id). If you have more than 50,000 sessions per day, you will hit the standard API limit, so you'll need to request an increase.   
 
 ## How to set it up
 Before you can start looking at the pipeline, you need to have the hit level data coming in. There are multiple ways you can achieve this, the way that I used is described in this blog by [Doug Hall](https://www.conversionworks.co.uk/blog/2019/06/14/custom-data-pipeline-to-bigquery-in-realtime/), which is based on a blog by [Simo Ahava](https://www.simoahava.com/analytics/automatically-fork-google-analytics-hits-snowplow/). 
@@ -46,6 +48,14 @@ The `CJS - Set Cookie` variable is [this one](https://www.simoahava.com/analytic
 The Cookie and URL variables are GTM built in variables with the utm_source or utm_medium for the URL and the cookie names for the cookies. You can use Local Storage rather than Cookies if you prefer, just remember to comply with relevant data privacy legislation
 
 The eagle-eyed amongst you will notice that this doesn't expire the cookie at midnight, however as the data is loaded into either date-partitioned or date sharded tables, and the queries are made on a daily basis, as long as your partitions align to your local timezone the midnight cutoff will happen anyway. 
+
+You will also need a service account set up, that has:
+1. Query access to your GA Hit Data in BigQuery
+1. Permissions to create datasets and tables, and to load data into tables in your destination project.
+1. Read and Edit permission on the relevant Google Analytics Property (for the Full Visitor Id)
+1. Permissions to view and create Storage Buckets in Cloud Storage, and create objects in buckets in your destination project
+
+It's easiest if these are all in the same project, but there are situations where this isn't best practice, so the source, destination and storage can all be in different projects. 
 
 ## Pipeline configuration
 The majority of the pipeline will work without any modification, however user settings do need to be set up. 
