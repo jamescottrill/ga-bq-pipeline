@@ -17,6 +17,7 @@ from ga_bq_pipeline.ETL import *
 # UPDATE THESE
 CUSTOM_DEFINITION_OFFSET = 100
 USER_AGENT_CD = '30'
+SESSION_ID_CD = '5'
 #Social Source Regex
 socialRe = 'fb|facebook|t.co|twitter|pinterest|linkedin|linked.in|insta|ig|vsco|reddit|digg|myspace'
 ##YOU CAN STOP NOW
@@ -600,7 +601,7 @@ class PIPELINE(ETL):
         fvid = self.get_full_visitor_id(clientId, propId)
         session['clientId'] = clientId
         session['fullVisitorId'] = fvid['hashedClientId']
-        session['visitId'] = self.retrieve_value(obj, 'cd5', 0)
+        session['visitId'] = self.retrieve_value(obj, 'cd'+SESSION_ID_CD, 0)
         session['visitStartTime'] = first_hit_posix
         session['date'] = first_hit.strftime('%Y-%m-%d')
         # Totals
@@ -686,9 +687,9 @@ class PIPELINE(ETL):
         @param df: The dataframe of all hits
         @return: Sessions and Session Ids
         """
-        # Group hits into sessions by CD5
-        dfs = dict(tuple(df.groupby('cd5')))
-        sids = df.cd5.drop_duplicates()
+        # Group hits into sessions by SESSION_ID_CD
+        dfs = dict(tuple(df.groupby('cd'+SESSION_ID_CD)))
+        sids = df['cd'+SESSION_ID_CD].drop_duplicates()
         return dfs, sids
 
     def process_data(self, dfs, sids):
