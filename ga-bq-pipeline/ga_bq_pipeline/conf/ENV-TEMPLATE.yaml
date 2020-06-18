@@ -12,4 +12,5 @@ bigquery:
   source_table: SOURCE BQ TABLE
 
 storage:
+  project: CLOUD STORAGE PROJECT
   bucket: CLOUD STORAGE BUCKET NAME

@@ -96,12 +96,11 @@ class PIPELINE(ETL):
 
     def check_create_bucket(self):
         gs = self.gs_client
-        bucket = storage.Bucket(client=gs, name=self.storage['bucket'])
-        bucket.location = 'EU'
+        bucket = storage.Bucket(client=gs, name=self.storage['bucket'], project=self.storage['project'])
         try:
             gs.get_bucket(bucket)
         except NotFound:
-            gs.create_bucket(bucket)
+            gs.create_bucket(bucket, location='EU', project=self.storage['project'])
         return
 
     def query_data(self):
@@ -669,7 +668,6 @@ class PIPELINE(ETL):
         @return: None
         """
         bucket = self.gs_client.bucket(self.storage['bucket'])
-        bucket.exists()
         blob = bucket.blob(file)
 
         with open(file, 'rb') as source_file:
