@@ -68,12 +68,14 @@ The majority of the pipeline will work without any modification, however user se
     1. Service Account - The name of your service account file e.g. 'my-service-account.json'
     1. Save the file in the format 'envname.yaml' e.g. dev.yaml
 ### bq_etl.py
-1. Custom Dimension Offset - As mentioned above, Along with your hit you need to send an additional custom dimension, offset by a certain value, containing hte scope. This can be whatever offset you like, you just need to update the offset.
+1. Custom Dimension Offset - As mentioned above, Along with your hit you need to send an additional custom dimension/metric, offset by a certain value, containing the scope. This can be whatever offset you like, you just need to update the offset.
 1. User Agent Custom Dimension - The User Agent string needs to be sent as a Custom Dimension, and the index of that dimension needs to be set. 
 1. Social Sources - A basic regex is used to determine if traffic came from a social source. This uses the standard social network sites, but if you have additional sites you want to track, you can add them there.
+1. Session Id Custom Dimension - The Custom Dimension Index that the Session Id (above) is being sent in.
+1. Number of Custom Dimensions & Custom Metrics - Because you can send any number of custom definitions that you want, and the dimension scope is also sent in a custom definition, it's difficult to determine how many custom definitions you have, so the TOTAL_CUSTOM_X variable sets out how many custom definitions you're including in your collection.
 
 ### airflow_scheduler_local.py
-1. The Airflow Env Name - the environment variable that airflow uses to determine which configuration file to load. As you can use any variable name, update the variable at the top of the airflow scheduler if you use something other than 'AIRFLOW_ENV'. Also remember to update the variable you set when loading Airflow. You can also 
+1. The Airflow Env Name - the environment variable that airflow uses to determine which configuration file to load. As you can use any variable name, update the variable at the top of the airflow scheduler if you use something other than 'AIRFLOW_ENV'. Also remember to update the variable you set when loading Airflow. 
 
 ### Airflow conf_env.yaml files
 1. pipeline > env - This is the configuration for the pipeline, not airflow (prod, dev, local-prod, local-dev)

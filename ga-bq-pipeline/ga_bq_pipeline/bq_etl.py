@@ -16,6 +16,8 @@ from ga_bq_pipeline.ETL import *
 
 # UPDATE THESE
 CUSTOM_DEFINITION_OFFSET = 100
+TOTAL_CUSTOM_DIMENSIONS = 20
+TOTAL_CUSTOM_METRICS = 20
 USER_AGENT_CD = '30'
 SESSION_ID_CD = '5'
 #Social Source Regex
@@ -117,7 +119,7 @@ class PIPELINE(ETL):
         query_req = self.bq_client.query(query)
         rows = query_req.result()
         df = bigquery.table.RowIterator.to_dataframe(rows)
-        df = df.applymap(lambda x: parse_qs.unquote(x) if isinstance(x, str) else x)
+        df = df.applymap(lambda x: parse.unquote(x) if isinstance(x, str) else x)
         return df
 
     @staticmethod
@@ -224,8 +226,8 @@ class PIPELINE(ETL):
             'productListName': self.retrieve_value(session_obj, 'pr' + i + 'nm', n),
             'isImpression': is_impression,
             'isClick': is_click,
-            'customDimensions': self.custom_definition(session_obj, 'pr1cd', 20, n, 'dimension', ['P']),
-            'customMetrics': self.custom_definition(session_obj, 'pr1cm', 20, n, 'dimension', ['P'])
+            'customDimensions': self.custom_definition(session_obj, 'pr1cd', int(TOTAL_CUSTOM_DIMENSIONS), n, 'dimension', ['P']),
+            'customMetrics': self.custom_definition(session_obj, 'pr1cm', int(TOTAL_CUSTOM_METRICS), n, 'dimension', ['P'])
         }
         return obj
 
@@ -267,9 +269,9 @@ class PIPELINE(ETL):
                             'productListName': self.retrieve_value(session_obj, 'il' + str(key) + 'nm', n),
                             'isImpression': True,
                             'isClick': is_click,
-                            'customDimensions': self.custom_definition(session_obj, 'il' + key + 'pi' + i + 'cd', 20, n,
+                            'customDimensions': self.custom_definition(session_obj, 'il' + key + 'pi' + i + 'cd', int(TOTAL_CUSTOM_DIMENSIONS), n,
                                                                        'dimension', ['P']),
-                            'customMetrics': self.custom_definition(session_obj, 'il' + key + 'pi  ' + i + 'cm', 20, n,
+                            'customMetrics': self.custom_definition(session_obj, 'il' + key + 'pi  ' + i + 'cm', int(TOTAL_CUSTOM_METRICS), n,
                                                                     'metric',
                                                                     ['P'])
                         }
@@ -358,8 +360,8 @@ class PIPELINE(ETL):
 
         output['eventInfo'] = hitsEventInfo.copy()
 
-        output['customDimensions'] = self.custom_definition(session, 'cd', 20, i, 'dimension', ['H'])
-        output['customMetrics'] = self.custom_definition(session, 'cm', 20, i, 'metric', ['H'])
+        output['customDimensions'] = self.custom_definition(session, 'cd', int(TOTAL_CUSTOM_DIMENSIONS), i, 'dimension', ['H'])
+        output['customMetrics'] = self.custom_definition(session, 'cm', int(TOTAL_CUSTOM_METRICS), i, 'metric', ['H'])
 
         # Hit Content Groups
         for k in range(1, 6):
@@ -520,7 +522,7 @@ class PIPELINE(ETL):
         """
         Get the session total information, equates to the 'totals' record.
         @param session_obj: Session Object
-        @return:
+        @return: Array containing the session totals
         """
         try:
             pageviews = int(session_obj.get('t').value_counts()['pageview']) or 0
@@ -617,8 +619,8 @@ class PIPELINE(ETL):
             # Initiate Dicts and Lists
             hit = self.process_hit(obj, y)
             hits.append(hit.copy())
-            cds += self.custom_definition(obj, 'cd', 20, y, 'dimension', ['S', 'U'])
-            cms += self.custom_definition(obj, 'cm', 20, y, 'metric', ['S', 'U'])
+            cds += self.custom_definition(obj, 'cd', int(TOTAL_CUSTOM_DIMENSIONS), y, 'dimension', ['S', 'U'])
+            cms += self.custom_definition(obj, 'cm', int(TOTAL_CUSTOM_METRICS), y, 'metric', ['S', 'U'])
         cds = self.collapse_session_cdm(cds)
         cms = self.collapse_session_cdm(cms)
         session['customDimensions'] = cds
