@@ -60,7 +60,7 @@ It's easiest if these are all in the same project, but there are situations wher
 ## Pipeline configuration
 The majority of the pipeline will work without any modification, however user settings do need to be set up. 
 ### Environment Configuration YAML
-1. Service Account - The pipeline is set up to use a service account, it will need BQ Editor and Storage Editor permissions. Once you've set up the service account, put the json file in the `google-keys` folder.
+1. Service Account - The pipeline is set up to use a service account, it will need BQ Editor and Storage Editor permissions. Once you've set up the service account, put the json file in the `google-keys` folder. For local environments the google-keys folder should stay where it is, for the dev and prod environments, this should be in your root folder i.e. `/google-keys/`. Having one folder location on production environments means that you can run multiple pipelines off this template structure and keep all the keys in one place (or use the same key for all pipelines).
 1. The Environment Configuration Files - Many of the attributes required are stored in the `ga-bq-pipeline/ga_bq_pipeline/conf` folder. In this repo there is a template file for the configuration. You'll need to fill these out for your specific use case. 
     1. The BigQuery `source_` values are for the table your hits are streamed in to.
     1. The other BigQuery values are for the destination table
@@ -78,7 +78,7 @@ The majority of the pipeline will work without any modification, however user se
 1. The Airflow Env Name - the environment variable that airflow uses to determine which configuration file to load. As you can use any variable name, update the variable at the top of the airflow scheduler if you use something other than 'AIRFLOW_ENV'. Also remember to update the variable you set when loading Airflow. 
 
 ### Airflow conf_env.yaml files
-1. pipeline > env - This is the configuration for the pipeline, not airflow (prod, dev, local-prod, local-dev)
+1. pipeline > env - This is the configuration for the pipeline, not airflow (prod, dev, local-prod, local-dev) 
 1. dag_args > schedule_interval - You can leave this as is or update it to suit you. Remember all times are in UTC, so adjust the time to ensure your hits are processed after midnight in your timezone. 
 ---
 Other values can be left 'as is'.
@@ -90,7 +90,7 @@ The first step is to create new virtual environments, one for the pipeline and o
 
 #### Pipeline Virtual Env
 ```bash
-cd YOUR_PIPELINE_ROOT #Change this to wherever you cloned the repo to.
+cd YOUR_PIPELINE_ROOT #Change this to wherever you cloned the repo to
 export PIPELINE_ROOT=$(pwd) 
 python -m virtualenv env
 source env/bin/activate
@@ -98,7 +98,7 @@ pip install -r ga-bq-pipeline/requirements.txt
 deactivate
 ```
 #### Airflow Virtual Env
-If you already have Airflow set up on your device, or you're implementing this on a production airflow server, you can skip most of this, just symlink your pipeline folder into your dags folder and you're good to go.
+If you already have Airflow set up on your device, or you're implementing this on a production airflow server, you can skip most of this, just symlink your pipeline folder into your dags folder and you're good to go. This isn't a production ready setup, this is just so you can test and run the pipeline. If you want to deploy this into production then Google is your friend (or find a DevOps person to do it for you).
 ```bash
 mkdir -p ~/airflow && cd ~/airflow
 export AIRFLOW_HOME=~/airflow #You can also add this to your ~/.bashrc file.
@@ -111,7 +111,7 @@ deactivate
 Then launch airflow:
 ```bash
 source $AIRFLOW_HOME/env/bin/activate
-airflow variables -s airflow_env dev #or prod, if you're running in production
+airflow variables -s airflow_env dev #or prod, if you're using the production config
 mkdir -p $AIRFLOW_HOME/dags/ga-pipeline/
 ln -s $PIPELINE_ROOT $AIRFLOW_HOME/dags/ga-pipeline/
 airflow upgradedb
