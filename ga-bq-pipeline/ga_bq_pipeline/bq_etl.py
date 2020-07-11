@@ -343,6 +343,7 @@ class PIPELINE(ETL):
                     break
                 else:
                     output['isExit'] = None
+                    break
             else:
                 output['isExit'] = None
             j -= 1
