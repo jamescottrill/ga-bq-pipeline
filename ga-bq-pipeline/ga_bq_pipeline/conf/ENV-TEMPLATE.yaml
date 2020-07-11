@@ -6,7 +6,7 @@ service_account: YOUR SERVICE ACCOUNT FILE NAME
 bigquery:
   project: TARGET BQ PROJECT
   dataset: TARGET BQ DATASET
-  table: TARGET BQ DATASET
+  table: TARGET BQ TABLE
   source_project: SOURCE BQ PROJECT
   source_dataset: SOURCE BQ DATASET
   source_table: SOURCE BQ TABLE
